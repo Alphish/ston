@@ -214,12 +214,16 @@ Reference addresses
 
 **Reference address** is a part of reference entity, and provides an information to identify another entity in the document tree. Each address begins with an **initial context**, identifying a specific node in the hierarchy of context, and a **relative path** composed of multiple **path segments**, that describes the way to navigate through the hierarchy to the destination.
 
+---
+
 The initial context can be:
 
  - the *reference defining context* (the parent context of the reference entity)
  - an *ancestor of the reference defining context* of specific order (first ancestor is the parent of the reference defining context, second ancestor is the parent of the parent etc.)
  - the *document core's own context*
  - a *globally identified entity's own context*, with a specific identifier
+ 
+---
  
 After the initial context, a sequence of path segments follows. Each path segment describes how to reach the next context from the current context. The following path segments are available:
 
@@ -228,11 +232,18 @@ After the initial context, a sequence of path segments follows. Each path segmen
  - an *indexed member path segment*, which changes the context to an indexed member value of the current context matching a provided sequence of entities, as defined in the member initialization
  - a *collection element path segment*, which changes the context to a collection element with specific index of the current context, as defined in the collection initialization
 
-The indexed member path segment deserves a special mention, as it has multiple special properties.
+The indexed member path segment and collection element path segments deserve special mention, as they contain nested entities. All the nested entities are defined in the same context as the outer reference entity, the one the path segment belongs to. Thus, each reference entity is a sibling to its nested entities.
 
-First, this is the only segment that requires a sequence of entities, and each of these must meet specific conditions. Namely, each index entity must be either a simple-valued entity (implicitly or explicitly typed) or a reference entity, and it cannot have a global identifier. All of these entities are assumed to be defined in the same context as the outer reference entity, the one the indexed member path segment belongs to. In other words, all nested entities are treated as siblings of the outer reference entity.
+The collection element path segment index must be an implicitly typed simple-valued entity of binary or number data type, or a reference to such an entity. Furthermore, the value must represent a non-negative integer index, pointing to a specific element in the current context's collection initialization. The index cannot declare a global identifier.
 
-Second, an indexed member path segment can act like a collection element path segment under specific circumstances. This happens in two cases: when it has a single implicitly typed number-valued parameter and the current context defines no indices with single implicitly typed number-valued parameters, or when it has a single implicitly-typed binary-valued parameter and the current context defines no indices with single implicitly typed binary-valued parameters. In such case, the parameter is read as an integer to use as a collection element index, rather than used as a member index.
+The indexed member path segment parameters must be either simple-valued entities (implicitly or explicitly typed) or reference entities (pointing to any valued entity, simple or complex). Also, each parameter must not declare its global identifier - it exists solely for the sake of identifying an index.
+
+Under specific circumstances, an indexed member path segment might act as a collection element path segment. In principle, that happens when the segment has a single parameter that is a valid collection element index and the current context does not define indexed members structured like the element index. More specifically:
+
+ - the context permits binary-valued member indices as collection indices *if and only if* it defines no indexed members with a single reference entity or a single implicitly typed binary-valued entity as a parameter
+ - the context permits number-valued member indices as collection indices *if and only if* it defines no indexed members with a single reference entity or a single implicitly typed number-valued entity as a parameter
+ - the context permits no other member indices as collection indices
+ - the indexed member path segment acts as a collection element path segment *if and only if* it has a single parameter that is an implicitly typed simple-valued entity of permitted data type, or a reference to such an entity
 
 ---
 
@@ -240,7 +251,7 @@ There is no way to reach an index parameter or a construction parameter through 
 
 Whenever the context is set to a reference entity, whether as an initial context or one of subsequent contexts, it is treated as changing the context to its referenced value. If the referenced value is not yet known at the time of reaching the reference entity context, the encountered reference must be resolved immediately before any further address processing occurs.
 
-Once the last path segment is processed, the resulting context will be the referenced value, and the address will be successfully resolved.
+Once the last path segment is processed, the last reached context is treated as the referenced value, and the address is successfully resolved.
 
 Extensions
 ----------
@@ -292,7 +303,7 @@ The following list provides a summarized overview of elements present in abstrac
                  - ancestor path segment (with specific order)
                  - named member path segment (regular or extension, with specific name)
                  - indexed member path segment (matching specific sequence of simple/reference entities)
-                 - collection element path segment (with specific index)
+                 - collection element path segment (with specific index entity)
  - STON types
      - named type (regular or extension)
          - name
@@ -382,7 +393,7 @@ A binary literal can be prepended with a minus sign (U+002D), right before the i
 
 **Type opening token** and **type closing token** are used to begin and end type parameters list, respectively. They can also wrap a type inside, or be used to specifically denote an implicit type. Type opening token is represented with an opening angle bracket (U+003C) while type closing token is represented with a closing angle bracket (U+003E).
 
-**Collection type symbol** is a token used to denote collection types, right after the element type is defined. *Full collection type symbol* is represented with an opening square bracket (U+005B), followed by one or more dots (U+002E), followed by a closing square bracket (U+005D). *Short collection type symbol* is represented with the square brackets only.
+**Collection type suffix** is a token used to denote collection types, right after the element type is defined. *Full collection type suffix* is represented with an opening square bracket (U+005B), followed by one or more dots (U+002E), followed by a closing square bracket (U+005D). *Short collection type suffix* is represented with the square brackets only.
 
 **Union type separator** is a token used to separate different possible types of a given union type. It is represented with a vertical line (U+007C).
 
@@ -530,7 +541,7 @@ Any type appearing in the type definition sequence might be wrapped in a type wr
 
 A *named type sequence* represents a named STON type. Its name can be provided either as a CANUN path or a text literal token (when the named type is defined outside a type wrapping, text literal names are not allowed). The name can be prefixed with an extension token, indicating the named type is an extension type rather than a regular type. When there are no type parameters, the name might be followed by an empty type wrapping sequence or end right after the name. When the type has type parameters, its name must be followed by a type wrapping with a sequence of types inside.
 
-A *collection type sequence* represents a collection STON type. It consists of a token sequence representing the element type, directly followed by a collection type symbol, full or short (when the collection type is defined outside a type wrapping, short collection type symbol cannot be used, as it could be mistaken for an empty collection). To declare the collection of union type elements, the whole union type token sequence must be wrapped in a type wrapping; otherwise, the collection type will be created from the last element of the union type.
+A *collection type sequence* represents a collection STON type. It consists of a token sequence representing the element type, directly followed by a collection type suffix, full or short (when the collection type is defined outside a type wrapping, short collection type suffix cannot be used, as it could be mistaken for an empty collection). To declare the collection of union type elements, the whole union type token sequence must be wrapped in a type wrapping; otherwise, the collection type will be created from the last element of the union type.
 
 A *union type sequence* represents a union STON type. It begins with a token sequence representing one of permitted types, directly followed by one or more "union type separator - permitted type" pairs. If, for some reason, a union type must be used as permitted type of another union type, the inner union type must be wrapped in type wrappings.
 
@@ -557,7 +568,7 @@ Named member path segment is represented with a member access token, followed by
 
 Indexed member path segment is represented with an index opening token, followed by a sequence of index address entities, followed by an index closing token. The index address entity can be represented either with a simple value sequence, a type definition sequence followed by a simple value sequence, or a reference address sequence.
 
-Collection element path segment is represented with an index opening token, followed by a collection element access token, followed by a number or a binary literal, followed by an index closing token. The literal inside this token sequence must represent a non-negative integer; otherwise, the entire token sequence is invalid.
+Collection element path segment is represented with an index opening token, followed by a collection element access token, followed by a number literal, a binary literal or a reference address, followed by an index closing token. A parser might or might not report an error if a valid number or binary literal represents an invalid collection element index (such as a negative integer).
 
 
 
@@ -623,7 +634,7 @@ A valid reference address must be composed of a valid and existing initial conte
 
 A reference defining entity and a document core are valid initial contexts automatically. An ancestor initial context must have a positive integer order to be valid; any other order value cannot be used for the ancestor initial context. A globally identified entity initial context must have a valid CANUN name as an associated identifier; all other identifiers cannot be used for the globally identified entity initial context.
 
-All ancestor member path segments must have a positive integer order. All named member path segments must have an existing associated name. Each indexed member path segments must have one or more entities as parameters, and each of these entities must be either a simple entity (explicitly or implicitly typed) or a reference entity; all of these entities must be valid and existing, and none can be globally identified. All collection element path segment must have a non-negative integer index.
+All ancestor member path segments must have a positive integer order. All named member path segments must have an existing associated name. Each indexed member path segment must have one or more entities as parameters, and each of these entities must be either a simple entity (explicitly or implicitly typed) or a reference entity; all of these entities must be valid and existing, and none can be globally identified. Each collection element path segment must have an implicitly typed binary-valued or number-valued entity, or a reference to such an entity, as its index. The index must represent a non-negative integer.
 
 Entire document
 ---------------
@@ -705,7 +716,7 @@ Structural equivalence has the following properties:
          - in case of ancestor path segments, the same ancestor order is used
          - in case of named member path segments, the same member name is used, and both segments refer to the same kind of member (regular or extension)
          - in case of indexed member path segments, they both have the same number of parameters, and their corresponding parameters are structurally equivalent
-         - in case of collection element path segments, the same element index is used
+         - in case of collection element path segments, their element indices are structurally equivalent
          
 Two types are structurally equivalent when they are semantically equivalent. This is because each type has exactly one representation in terms of STON abstract structure, and thus different structures will always represent different types.
          
@@ -776,7 +787,7 @@ The type definition canonical form consists of the entity type canonical form, w
 
 A *named type* canonical form consists of a canonical text literal formed from the type name and an optional list of parameters. If no optional parameters are present, they are omitted; otherwise, they are represented with a type opening token (an opening angle bracket), followed by a sequence of parameter types, followed by a type closing token (a closing angle bracket). If the named type is an extension type, the name is additionaly prepended with an extension token (exclamation mark, U+0021).
 
-A *collection type* canonical form consists of a canonical representation of the element type, followed by a short collection type symbol (opening and closing square bracket: U+005B, U+005D). If the element type is a union type, its representation must be additionally wrapped in a single type wrapping.
+A *collection type* canonical form consists of a canonical representation of the element type, followed by a short collection type suffix (opening and closing square bracket: U+005B, U+005D). If the element type is a union type, its representation must be additionally wrapped in a single type wrapping.
 
 A *union type* canonical form consists of individual permitted types canonical representation, with neighouring types separated with a union type separator (vertical line, U+007C). Each permitted type that is a union type itself must have its representation additionally wrapped in a single type wrapping.
 
@@ -792,7 +803,7 @@ Each named member path segment is represented with a member access token followe
 
 Each indexed member path segment is represented with an index opening token (opening square bracket, U+005B), followed by a sequence of index parameter entities, followed by an index closing token (closing square bracket, U+005D).
 
-Each collection element path segment is represented with an index opening token, followed by a collection index access token (number sign, U+0023), followed by the element index represented as a canonical number literal, followed by an index closing token.
+Each collection element path segment is represented with an index opening token, followed by a collection index access token (number sign, U+0023), followed by the element index canonical representation, followed by an index closing token.
 
 STON implementations
 ====================
@@ -838,7 +849,7 @@ Limitations
 
 Ideally, any possible STON document should be possible to represent in a given implementation. However, there might be extreme cases whose handling are either impossible on a given platform, or would significantly increase the complexity implementation, possibly with added computational or memory costs for more common cases. Such extreme cases are most likely to occur with particularly large STON documents, which would be extremely uncommon and possibly represent an information that would be much more efficiently represented in a different format.
 
-With that in mind, an exception can be made when considering STON implementations validity. If a platform-specific implementation, given unlimited memory, cannot correctly process an entity whose canonical form would exceed a length of one billion or a STON text with such a length, it still can be considered a practically valid STON implementation. All smaller entities and STON texts should be possible to process correctly, unless there are platform limitations make it impossible. A given implementation may still process the larger entities and STON texts (possibly unlimited, given enough memory), and it should still adhere to this specification in such case; however, it is not a strict requirement that any implementation must follow.
+With that in mind, an exception can be made when considering STON implementations validity. If a platform-specific implementation, given unlimited memory, cannot correctly process an entity whose canonical form would exceed a length of one billion or a STON text with such a length, it still can be considered a practically valid STON implementation. All smaller entities and STON texts should be possible to process correctly, unless platform-specific limitations make it impossible. A given implementation may still process the larger entities and STON texts (possibly unlimited, given enough memory), and it should still adhere to this specification in such case; however, it is not a strict requirement that any implementation must follow.
 
 Such an upper limit has been chosen to make STON implementation conditions significantly less restrictive while still making them applicable to nearly all practical uses. For example, an unlimited, mathematically valid STON implementation would require a way to represent an arbitrarily large ancestor order in a reference address. A limited, practically valid STON implementation could instead use a 32-bit integer (signed or not), because no sufficiently small entity has more than billion levels of nesting.
 

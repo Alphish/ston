@@ -300,7 +300,7 @@ Once initial context is found, **path segments** of the relative path are handle
  - an *ancestor path segment* changes the context to an ancestor of specific order, determined by a number of carets following a dot; the parent of the current context is written as `.^`, while the third ancestor is written as `.^^^`
  - a *named member path segment* changes the context to a named member of the current context, defined in the member initialization; for example: `.name` or `."some-member"`
  - an *indexed member path segment* changes the context to an indexed member of the current context, defined in the member initialization, with the index parameters being either simple-valued entities (implicitly or explicitly typed) or reference entities; for example: `[1]`; `["ten"]`; `[2,4]`; `[<float>34]`; `[@SOME\_INDEX]`
- - a *collection element path segment* changes the context to a collection element of a specific integer index, provided as a number literal or a binary literal; for example: `[#1]` or `[#0x10]`
+ - a *collection element path segment* changes the context to a collection element of a specific integer index, provided as a number value, a binary value or a reference to such a value; for example: `[#1]`, `[#0x10]` or `[# $.idx]`
 
 There is no way to access a constructor parameter or an index parameter from outside of its own context using path segments. If one of these needs to be accessed from outside, a global identifier is necessary inside that entity's context.
 
@@ -369,7 +369,9 @@ Other resources
 
 Currently, a [language specification draft](https://github.com/Alphish/ston/blob/master/standards/STON-language-specification-draft.md) is available. It describes the STON syntax and rules in more precise terms, so that consistent implementations can be created based on that. The specification and the nomenclature are still subject to change; there might be minor language revisions, too. However, the core concepts and rules should remain the same.
 
-Language reference, tutorials and developers guide are planned for the nearest future. When it comes to implementations, .NET framework implementation is currently in progress, with the first version to be published in the first weeks of July.
+Also, a pre-release of STON implementation for .NET framework is available. The repository for the implementation is available [here](https://github.com/Alphish/ston-net). The ready-to-use package can be found [on NuGet](https://www.nuget.org/packages/Alphicsh.Ston/).
+
+Language reference, tutorials and developers guide are planned for the nearest future.
 
 Credits
 =======
